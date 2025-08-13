@@ -1,69 +1,165 @@
-# expr
-Experiment versioning: versioning the results of runs. Once an experiment class is defined, a folder with the name of the notebook (or code you're working with) will be created in the Results folder. Then, subsequent version folders will be created each time you run the code. Here is an example for test.ipynb experiment:
+# ExpLab
 
-    .
-    ├── Results
-      ├── test                         # This folder will be created to store the results of each run for the test.ipynb.
-        ├── v1                         # This folder will be created to store the results of first run of test.ipynb file.
-            ├── output.log             # This file will be created to store the logged information of the test.ipynb file. 
-            ├── test_image_v1.png      # This is a logged png file created by log_file method of the experiment class (example below).
-            ├── test_result_v1.csv     # This is a logged csv file created by log_file method of the experiment class (example below).
-            ├── test_image_v2.png      # This is version 2 (second run) of the same test_image file. 
-            └── ...
-Note that if you run a cell multiple times which includes a logged file (csv, png, etc.), the experiment version will stay the same, but the file version will be changed unless you specify overwrite_existing input as True.
-        
-To use the package, project should be organized into a combination of local files (which includes outputs and data and data dictionary) and code (which is your cloned git repo for the project).
+**ExpLab** is a lightweight experiment management and versioning tool designed for local or cloud-simulated workflows.  
+It automatically versions the results of each run, organizes outputs by experiment, and provides convenient methods for logging, reading, and managing files.  
 
-### An example top-level directory layout
+ExpLab is ideal for:
+- Data science experiments
+- Machine learning model runs
+- Simulation workflows
+- Reproducible research
 
-    .
-    ├── project xyz               # Porject directory in your local system
-      ├── Data                    # Data for the project, includes all data files
-      ├── xyz                     # Cloned git repo for the project codes, includes all the code
-        ├── cleaning              # Cleaning step
-        ├── model_evaluation      # Model evaluation
-        ├── Tuning                # Tuning step
-        └── ...
-      ├── Dicionary               # data dictionary for the project data
-      ├── Results                 # Results folder for the outputs of experiments, results of each run will be stored here.
-      └── README.md
+---
 
-## Usage
-To start, import the package, and define an experiment. 
-First, get the name of the notebook you're working with by running:
+## ✨ Key Features
+
+- **Automatic result versioning**: Every time you run an experiment, a new versioned folder is created.
+- **File version tracking**: Within a single experiment run, logged files can have their own version history.
+- **Structured storage**: Keeps your project organized into **data**, **dictionary**, **results**, and **code**.
+- **Logging utilities**: Easily log messages and output files.
+- **Data access**: Quickly read the latest or specific versions of your data and logged files.
+- **Cloud-like simulation**: Works with a consistent folder structure to mimic remote experiment storage.
+
+---
+
+## 📁 Folder Structure
+
+ExpLab expects your project to follow a structure like this:
+
 ```
-curr_notebook =  re.search('(.+).ipynb',os.path.basename(globals()['__vsc_ipynb_file__']))[1]
-```
-Alternatively, you can directly use the name of the file you're working with as a string: "test.ipynb".
 
-Next, use experiment class to define a new class for your experiment (run) by:
+project\_xyz/               # Project root
+├── Data/                   # Project data files
+├── Dictionary/             # Data dictionary files
+├── Results/                 # Experiment outputs (versioned by ExpLab)
+│   ├── test/                # Experiment name = notebook/script name
+│   │   ├── v1/              # Version 1 of this experiment
+│   │   │   ├── output.log
+│   │   │   ├── test\_image\_v1.png
+│   │   │   ├── test\_result\_v1.csv
+│   │   │   └── ...
+│   │   ├── v2/
+│   │   │   ├── output.log
+│   │   │   └── ...
+│   │   └── ...
+├── xyz/                     # Cloned Git repo containing code
+│   ├── cleaning/
+│   ├── model\_evaluation/
+│   ├── tuning/
+│   └── ...
+└── README.md
+
+````
+
+> **Note:** ExpLab automatically creates the experiment folder inside `Results/` using the notebook or script name.
+
+---
+
+## 🔄 Versioning Logic
+
+- **Experiment versions**: Increment each time you re-run the experiment from scratch.
+- **File versions**: Increment when you log the same file multiple times in the same experiment run.
+- **Overwrite control**: Use `overwrite_existing=True` when creating an experiment if you want to overwrite files instead of versioning them.
+
+---
+
+## 🚀 Quick Start
+
+### 1️⃣ Install
+*(Once packaged)*:
+```bash
+pip install explab
+````
+
+Or clone the repo and use locally:
+
+```bash
+git clone https://github.com/<your-username>/explab.git
 ```
+
+### 2️⃣ Import and Initialize
+
+```python
+import os, re
+import experiments  # Your ExpLab module
+
+# Get current notebook name automatically (VS Code/Jupyter)
+curr_notebook = re.search('(.+).ipynb', os.path.basename(globals()['__vsc_ipynb_file__']))[1]
+
+# Create an experiment instance
 expr = experiments.experiment(curr_notebook, overwrite_existing=False)
 ```
 
-To log a message, use:
-```
+---
+
+## 📝 Logging
+
+### Log a message
+
+```python
 expr.log("This is a logged message.")
-````
-
-To wirte a file (image, excel, etc.) you'll need to log the file first by using log_file function:
-```
-FileName_excel = expr.log_file('Test_excel_file.xlsx')
-```
-Then, you can use the FileName_excel variable in the ExcelWriter:
-```
-writer = pd.ExcelWriter(FileName_excel)
 ```
 
-### Read data
-To read data you can use read_data method of the experiment class:
-```
-expr.read_data('my_data')
-```
-You don't need to specify the format of the file. The method will read the latest version of the data unless specified otherwise. Currently this method supports csv and xlsx formats and it uses pandas read_csv and read_excel functions to read these two types of data.
+### Log a file
 
-### Read logged files
-To read a logged file, you can use read_logged_file method. It will read the latest version of the file, unless otherwise specified. If the files is and Excel file, you can specify sheet_name as well.
+```python
+file_name_excel = expr.log_file('Test_excel_file.xlsx')
+writer = pd.ExcelWriter(file_name_excel)
 ```
-expr.read_logged_file('test_result', version = 'latest', sheet_name = 0)
+
+If you log the same file multiple times in one experiment run, ExpLab appends a file version (`_v2`, `_v3`, ...).
+
+---
+
+## 📂 Reading Data
+
+### Read project data
+
+```python
+df = expr.read_data('my_data')  # Automatically finds the latest version
 ```
+
+* No need to specify file type (`.csv` or `.xlsx`).
+* Automatically uses `pandas.read_csv` or `pandas.read_excel`.
+
+---
+
+## 📂 Reading Logged Files
+
+```python
+result_df = expr.read_logged_file(
+    'test_result',
+    version='latest',
+    sheet_name=0
+)
+```
+
+* Reads the latest or specified version.
+* Supports CSV and Excel.
+* For Excel, you can pass `sheet_name`.
+
+---
+
+## 🌟 Integration with ProjLab
+
+If you also use **ProjLab** (project scaffolding tool):
+
+* **ProjLab** sets up the folder structure (`Data/`, `Results/`, `Dictionary/`, `code/`).
+* **ExpLab** runs inside that structure to manage experiments and result versioning.
+* Together they give you a **reproducible, version-controlled local lab environment**.
+
+---
+
+## 📌 Example Workflow
+
+1. Use **ProjLab** to create a new `poc` project with `expLab` integration.
+2. Work in a Jupyter notebook `train_model.ipynb`.
+3. Log intermediate and final outputs via ExpLab.
+4. ExpLab automatically organizes them into `Results/train_model/vX`.
+5. Share only the `Results` and `Data` folders to reproduce the run elsewhere.
+
+---
+
+## 📜 License
+
+MIT License — you are free to use, modify, and distribute this tool.
