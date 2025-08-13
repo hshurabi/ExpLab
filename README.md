@@ -76,7 +76,7 @@ git clone https://github.com/<your-username>/explab.git
 
 ```python
 import os, re
-import experiments
+import experiments as expr
 
 # Get current notebook name automatically (VS Code/Jupyter)
 curr_notebook = re.search('(.+).ipynb', os.path.basename(globals()['__vsc_ipynb_file__']))[1]
@@ -158,5 +158,6 @@ If you also use **ProjLab** (project scaffolding tool):
 ## 📜 License
 
 MIT License — you are free to use, modify, and distribute this tool.
+
 
 
